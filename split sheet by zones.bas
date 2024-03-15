@@ -7,6 +7,12 @@ End Function
 
 Sub zoneAdd()
 
+With Application
+        .AskToUpdateLinks = False
+        .DisplayAlerts = False
+        .Calculation = xlCalculationManual
+End With
+
 Dim result, sumWeightObject, sumWeightZone, sumWeight0, sumWeight1, km, km0, km1, kmWeight As Double
 Dim weightsArr01(), weightsArr0(), weightsArr1(), weightsArrObjects() As Double
 Dim kmArr01(), kmArr0(), kmArr1() As Double
@@ -14,20 +20,20 @@ Dim typeArr01() As String
 Dim checkingSumWeight(), checkingObjectsWeight(), checkingLandfillsWeight() As Double 'массивы для проверки сумм масс (масса образования, масса 1 плеча, масса по полигонам. Масса 2 плеча и прямого вывоза не проверяется, т.к. если не сойдется масса по полигонам, то уже где-то ошибка)
 
 Sheets(1).Select
-
-Set findcell0Start = Sheets(1).Range(Cells(1, 1), Cells(1000, 11)).Find("Прямой вывоз и первое плечо") '
-Set findcell0End = Sheets(1).Range(Cells(findcell0Start.Row, 1), Cells(1000, 1)).Find("Итого (масса образования)") '
-Set findCell1Start = Sheets(1).Range(Cells(findcell0End.Row + 1, 1), Cells(1000, 1)).Find("Первое плечо и прямой вывоз итоги") 'первое плечо и прямой вывоз итоги
-Set findCell1End = Sheets(1).Range(Cells(findcell0End.Row + 1, 1), Cells(1000, 1)).Find("Итого") 'первое плечо и прямой вывоз итоги
-Set findCell2Start = Sheets(1).Range(Cells(findCell1End.Row + 1, 1), Cells(1000, 1)).Find("Второе плечо")
-Set findCell2End = Sheets(1).Range(Cells(findCell2Start.Row + 1, 1), Cells(1000, 1)).Find("Итого")
-Set findCell3Start = Sheets(1).Range(Cells(findCell2End.Row + 1, 1), Cells(1000, 1)).Find("Объекты размещения") 'полигоны
-Set findCell3End = Sheets(1).Range(Cells(findCell3Start.Row + 1, 1), Cells(1000, 1)).Find("Итого") 'полигоны
-
-
-Set findCell = Nothing
-Set findCell = Sheets(1).Range(Cells(1, 1), Cells(1000, 1)).Find("Первое плечо и прямой вывоз итоги")
-
+Set mainWs = Sheets(1)
+With mainWs
+    If .AutoFilterMode Then .AutoFilterMode = False
+    Set findcell0Start = .Range(.Cells(1, 1), .Cells(1000, 11)).Find("Прямой вывоз и первое плечо") '
+    Set findcell0End = .Range(.Cells(findcell0Start.Row, 1), .Cells(1000, 1)).Find("Итого (масса образования)") '
+    Set findCell1Start = .Range(.Cells(findcell0End.Row + 1, 1), .Cells(1000, 1)).Find("Первое плечо и прямой вывоз итоги") 'первое плечо и прямой вывоз итоги
+    Set findCell1End = .Range(.Cells(findcell0End.Row + 1, 1), .Cells(1000, 1)).Find("Итого") 'первое плечо и прямой вывоз итоги
+    Set findCell2Start = Sheets(1).Range(.Cells(findCell1End.Row + 1, 1), .Cells(1000, 1)).Find("Второе плечо")
+    Set findCell2End = .Range(.Cells(findCell2Start.Row + 1, 1), .Cells(1000, 1)).Find("Итого")
+    Set findCell3Start = .Range(.Cells(findCell2End.Row + 1, 1), .Cells(1000, 1)).Find("Объекты размещения") 'полигоны
+    Set findCell3End = .Range(.Cells(findCell3Start.Row + 1, 1), .Cells(1000, 1)).Find("Итого") 'полигоны
+    Set findCell = Nothing
+    Set findCell = .Range(.Cells(1, 1), .Cells(1000, 1)).Find("Первое плечо и прямой вывоз итоги")
+End With
 Dim coeffSort() As Double
             
 Dim objects As New Dictionary
@@ -47,7 +53,8 @@ With objects
     'Next x
     'Debug.Print .Item(objects.Keys(1))(0)
     'Debug.Print objects("Волхонка АО " & Chr(34) & "Невский экологический оператор" & Chr(34))(1)
-    'Debug.Print objects(objects.Keys(1))(0)
+    'Debug.Print objects(objects.Keys(10))(3)
+    'Debug.Print objects(objects.Keys(10))(4)
     'Debug.Print objects(Sheets(1).Cells(341, 3).Value)(5)
 End With
 
@@ -74,14 +81,14 @@ j = 1
 Dim zones() As Long 'находим количество лотов
 ReDim Preserve zones(1 To 1)
 For Each e In zonesAll
-    unique = True
+    Unique = True
     For elem = LBound(zones) To UBound(zones)
         If zones(elem) = e Then
-            unique = False
+            Unique = False
             Exit For
         End If
     Next elem
-    If unique Then
+    If Unique Then
         ReDim Preserve zones(1 To j)
         zones(j) = e
         j = j + 1
@@ -99,6 +106,10 @@ Next e
 For zone = LBound(zones) To UBound(zones)
     is0 = False
     'ReDim weightsArrObjects(1 To 1), weightsArr0(1 To 1), weightsArr1(1 To 1), kmArr0(1 To 1), kmArr1(1 To 1) As Double
+    
+    For i = Sheets.Count To 1 Step -1
+        If Sheets(i).Name = "Лот " & zone Then Sheets(i).Delete
+    Next i
     
     Sheets.Add After:=Sheets(Sheets.Count)
     Sheets(Sheets.Count).Name = "Лот " & zone
@@ -401,11 +412,12 @@ For zone = LBound(zones) To UBound(zones)
         n = n + 1
     Next i
     
-    For i = 1 To UBound(sumWeightObjectsZone)
+    'For i = 1 To UBound(sumWeightObjectsZone)
        ' Debug.Print sumWeightObjectsZone(i)
        ' Debug.Print sumWeightObjectsFull(i)
-    Next i
+    'Next i
     
+    'Debug.Print startRow2temp
     
     For i = startRow + 1 To endrow 'масса на объект по лоту в списке всего 2 плеча
         For e = 0 To objects.Count - 1
@@ -498,6 +510,8 @@ For zone = LBound(zones) To UBound(zones)
     For i = startRow2_0 To endRow2
         For e = 1 To UBound(weightsAfterSort)
             If objectsAfterSort(e) = .Cells(i, 6) Then
+                Debug.Print UBound(objectsAfterSort), UBound(weightsAfterSort), UBound(weights2)
+                
                 .Cells(i, 11) = weights2(e0, 1) / CDbl(weightsAfterSort(e)) 'доля от общего потока объекта
             End If
         Next e
@@ -901,6 +915,11 @@ Next zone
 
 
 
+    With Application
+            .AskToUpdateLinks = True
+            .DisplayAlerts = True
+            .Calculation = xlCalculationAutomatic
+    End With
+
     
 End Sub
-
