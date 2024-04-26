@@ -519,7 +519,7 @@ Sub zoneAdd()
             Next i
 
             km2SumMul = 0 'средневзвешенное итоговое по 2 плечу
-            For i = LBound(weights2) to UBound(weights2)
+            For i = LBound(weights2) To UBound(weights2)
                 km2SumMul = km2SumMul + (weights2(i, 1) * km2(i, 1))
             Next i
             .Cells(endRow2 + 1, 12) = km2SumMul / Application.WorksheetFunction.Sum(.Range(.Cells(startRow2_0, 5), .Cells(endRow2, 5)))
@@ -611,19 +611,12 @@ continueFor:
                 elem = elem + 1
             Next e
 
-            .Cells(n, 1) = "Итого"
             For e = 1 To UBound(landfillsList)
                 .Cells(n - counter + e - 1, 4) = sumWeights0Landfills(e) 'надо исправить этот ужас n - counter + e - 1
                 .Cells(n - counter + e - 1, 5) = sumWeights2Landfills(e) 'надо исправить этот ужас n - counter + e - 1
                 .Cells(n - counter + e - 1, 6) = sumWeights0Landfills(e) + sumWeights2Landfills(e) 'надо исправить этот ужас n - counter + e - 1
 
                 For Key = 0 To objects.Count - 1
-                '     If objects(objects.Keys(Key))(4) = "Прямой вывоз" Then
-                '         ReDim Preserve landfillsList(1 To element)
-                '         landfillsList(element) = objects.Keys(Key)
-                '         element = element + 1
-                '     End If
-
                     If objects.Keys(Key) = landfillsList(e) Then
                         .Cells(n - counter + e - 1, 7) = objects(objects.Keys(Key))(0) '% ВМР
                         .Cells(n - counter + e - 1, 8) = objects(objects.Keys(Key))(1) 'лимит обработки
@@ -886,3 +879,4 @@ continueFor:
     End With
 
 End Sub
+
