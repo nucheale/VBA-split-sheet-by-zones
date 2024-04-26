@@ -130,8 +130,6 @@ Sub zoneAdd()
                 End If
             Next i
 
-            
-
             Dim objectsArr, weightsArr, kmArr, objectsArrFull, weightsArrFull, kmArrFull As Variant
 
             objectsArr = .Range(.Cells(4, 4), .Cells(n - 1, 4))
@@ -192,9 +190,7 @@ Sub zoneAdd()
                 .Cells(n, j) = Sheets(1).Cells(findCell.Row + 1, findCell.Column + j - 1)
             Next j
 
-            
             n = n + 1
-            
 
             sumWeight0 = 0
             sumWeight1 = 0
@@ -277,8 +273,6 @@ Sub zoneAdd()
                 kmArr01(e) = .Cells(i, 10)
                 e = e + 1
             Next i
-
-            
             
             km1 = 0
             For e = 1 To UBound(typeArr01)
@@ -290,7 +284,6 @@ Sub zoneAdd()
             km1 = km1 / sumWeight1
             .Cells(endrow, 11) = km1 'средневзвешенное 1 плечо
 
-            
             If is0 = True Then
                 km0 = 0
                 For e = 1 To UBound(typeArr01)
@@ -312,7 +305,6 @@ Sub zoneAdd()
 
             endRow1 = n - 1 'конечная строка 2 блока (1 плечо и прямой вывоз итоги) без итоговой
             
-
             Dim weightsAfterSort() As Double
             Dim objectsAfterSort() As String
             e = 1
@@ -585,14 +577,14 @@ continueFor:
             Next j
             n = n + 1
 
-            Count = 0
+            counter = 0
             For e = 1 To UBound(landfillsList) 'заполнение названий полигонов (заполняются все, даже если на них 0 т)
             ' Debug.Print landfillsList(e)
                 .Cells(n + e - 1, 1) = landfillsList(e)
-                Count = Count + 1
+                counter = counter + 1
             Next e
 
-            n = n + Count
+            n = n + counter
             
             endRow3 = n - 1 'конечная строка 3 блока (Объекты размещения) без итогов
 
@@ -621,9 +613,9 @@ continueFor:
 
             .Cells(n, 1) = "Итого"
             For e = 1 To UBound(landfillsList)
-                .Cells(n - Count + e - 1, 4) = sumWeights0Landfills(e) 'надо исправить этот ужас n - count + e - 1
-                .Cells(n - Count + e - 1, 5) = sumWeights2Landfills(e) 'надо исправить этот ужас n - count + e - 1
-                .Cells(n - Count + e - 1, 6) = sumWeights0Landfills(e) + sumWeights2Landfills(e) 'надо исправить этот ужас n - count + e - 1
+                .Cells(n - counter + e - 1, 4) = sumWeights0Landfills(e) 'надо исправить этот ужас n - counter + e - 1
+                .Cells(n - counter + e - 1, 5) = sumWeights2Landfills(e) 'надо исправить этот ужас n - counter + e - 1
+                .Cells(n - counter + e - 1, 6) = sumWeights0Landfills(e) + sumWeights2Landfills(e) 'надо исправить этот ужас n - counter + e - 1
 
                 For Key = 0 To objects.Count - 1
                 '     If objects(objects.Keys(Key))(4) = "Прямой вывоз" Then
@@ -633,12 +625,12 @@ continueFor:
                 '     End If
 
                     If objects.Keys(Key) = landfillsList(e) Then
-                        .Cells(n - Count + e - 1, 7) = objects(objects.Keys(Key))(0) '% ВМР
-                        .Cells(n - Count + e - 1, 8) = objects(objects.Keys(Key))(1) 'лимит обработки
+                        .Cells(n - counter + e - 1, 7) = objects(objects.Keys(Key))(0) '% ВМР
+                        .Cells(n - counter + e - 1, 8) = objects(objects.Keys(Key))(1) 'лимит обработки
                         weightResult = (sumWeights0Landfills(e) + sumWeights2Landfills(e)) - Application.WorksheetFunction.Min((sumWeights0Landfills(e) + sumWeights2Landfills(e)), objects(objects.Keys(Key))(1)) * objects(objects.Keys(Key))(0) 'масса размещения
-                        .Cells(n - Count + e - 1, 9) = weightResult
-                        .Cells(n - Count + e - 1, 10) = objects(objects.Keys(Key))(2) 'лимит размещения
-                        .Cells(n - Count + e - 1, 11) = weightResult / objects(objects.Keys(Key))(2) 'загрузка объекта размещения
+                        .Cells(n - counter + e - 1, 9) = weightResult
+                        .Cells(n - counter + e - 1, 10) = objects(objects.Keys(Key))(2) 'лимит размещения
+                        .Cells(n - counter + e - 1, 11) = weightResult / objects(objects.Keys(Key))(2) 'загрузка объекта размещения
                     End If
                 Next Key
             Next e
@@ -686,14 +678,14 @@ continueFor:
             ReDim Preserve checkingLandfillsWeight(1 To zone)
             checkingLandfillsWeight(zone) = .Cells(n, 6)
 
-            Count = 0
+            counter = 0
             For i = endRow3 To startRow3 Step -1 'удаляем ненужные полигоны
                 If .Cells(i, 6) = 0 Then
                     .Rows(i).EntireRow.Delete
-                    Count = Count + 1
+                    counter = counter + 1
                 End If
             Next i
-            endRow3 = endRow3 - Count
+            endRow3 = endRow3 - counter
             '-----------------------------------Конец полигоны-----------------------------------------
 
             'Debug.Print "_______________", UBound(landfillsList)
@@ -715,8 +707,6 @@ continueFor:
             'Erase unsortedWeights2
             'Erase unsortedWeights2New
             'Erase weights2With0New
-
-            
 
 
             '-----------------------------------Форматирование-----------------------------------------
