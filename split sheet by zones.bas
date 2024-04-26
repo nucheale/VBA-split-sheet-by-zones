@@ -409,7 +409,9 @@ Sub zoneAdd()
             Next i
             endRow2 = .Cells(Rows.Count, 1).End(xlUp).Row 'конечная строка 3 блока (2 плечо) без итоговой
             
-            Dim weights2(), weights2ByZone(), sortedWeights2(), sortedWeights2ByZone(), unsortedWeights2(), unsortedWeights2ByZone() 'сорт/несорт
+            Dim landfills2(), km2(), weights2(), weights2ByZone(), sortedWeights2(), sortedWeights2ByZone(), unsortedWeights2(), unsortedWeights2ByZone()
+            ReDim Preserve landfills2(1 To (endRow2 - startRow2 + 1))
+            ReDim Preserve km2(1 To (endRow2 - startRow2 + 1))
             ReDim Preserve weights2(1 To (endRow2 - startRow2 + 1))
             ReDim Preserve sortedWeights2(1 To (endRow2 - startRow2 + 1))
             ReDim Preserve unsortedWeights2(1 To (endRow2 - startRow2 + 1))
@@ -417,7 +419,9 @@ Sub zoneAdd()
             weights2Sum = 0
             sortedWeights2Sum = 0
             unsortedWeights2Sum = 0
-            For i = startRow2 To endRow2 'массы 2 плеча, сорта/несорта + их сумма
+            For i = startRow2 To endRow2 'полигоны, расстояния, массы 2 плеча, сорта/несорта + их сумма
+                landfills2(i - startRow2 + 1) = .Cells(i, 3)
+                km2(i - startRow2 + 1) = .Cells(i, 8)
                 weights2(i - startRow2 + 1) = .Cells(i, 5)
                 weights2Sum = weights2Sum + weights2(i - startRow2 + 1)
                 sortedWeights2(i - startRow2 + 1) = .Cells(i, 9)
@@ -425,34 +429,16 @@ Sub zoneAdd()
                 unsortedWeights2(i - startRow2 + 1) = .Cells(i, 10)
                 unsortedWeights2Sum = unsortedWeights2Sum + unsortedWeights2(i - startRow2 + 1)
             Next i
-        
-            ReDim Preserve weights2ByZone(1 To zone)
-            ReDim Preserve sortedWeights2ByZone(1 To zone) 'сорт/несорт для проверки суммы в конце (сумма массы 2 плеча, сумма сорта и несорта)
-            ReDim Preserve unsortedWeights2ByZone(1 To zone)
-            weights2ByZone(zone) = weights2Sum
-            sortedWeights2ByZone(zone) = sortedWeights2Sum
-            unsortedWeights2ByZone(zone) = unsortedWeights2Sum
             
-            .Cells(endRow2 + 1, 1) = "Итого"
-            .Cells(endRow2 + 1, 5) = weights2Sum
-            .Cells(endRow2 + 1, 9) = sortedWeights2Sum
-            .Cells(endRow2 + 1, 10) = unsortedWeights2Sum
-            
-            Dim landfills2 As Variant, km2 'полигоны и расстояния 2 плеча
-            landfills2 = .Range(.Cells(startRow2, 3), .Cells(endRow2, 3))
-            landfills2 = twoDimArrayToOneDim(landfills2)
-            km2 = .Range(.Cells(startRow2, 8), .Cells(endRow2, 8))
-            km2 = twoDimArrayToOneDim(km2)
-
-            element = 1
+            iterationN = 1
+            mergedRow = startRow2
             For i = startRow2 To endRow2
                 For e = LBound(weightsAfterSort) To UBound(weightsAfterSort)
-                    If objectsAfterSort(e) = .Cells(i, 6) Then .Cells(i, 11) = weights2(element) / CDbl(weightsAfterSort(e)) 'доля от общего потока объекта
+                    If .Cells(i, 6) = objectsAfterSort(e) Then .Cells(i, 11) = weights2(endRow2 - startRow2 + 1) / CDbl(weightsAfterSort(e)) 'доля от общего потока объекта
                 Next e
-                element = element + 1
 
                 sumMultiplicationResult = 0
-                If Not .Cells(i, 3) = .Cells(i + 1, 3) Then 'средневзвешенные расстояния по полигонам
+                If Not .Cells(i, 3) = .Cells(i + 1, 3) Then 'средневзвешенные расстояния
                     weightLandfill = 0
                     For e = LBound(weights2) To UBound(weights2)
                         If landfills2(e) = .Cells(i, 3) Then
@@ -464,19 +450,8 @@ Sub zoneAdd()
                     km2Result = sumMultiplicationResult / weightLandfill
                     .Cells(i, 12) = km2Result
                 End If
-            Next i
 
-            Dim km2SumMul#
-            km2SumMul = 0 'средневзвешенное итоговое по 2 плечу
-            For i = LBound(weights2) To UBound(weights2)
-                km2SumMul = km2SumMul + (weights2(i) * km2(i))
-            Next i
-            .Cells(endRow2 + 1, 12) = km2SumMul / Application.WorksheetFunction.Sum(.Range(.Cells(startRow2, 5), .Cells(endRow2, 5)))
-
-            iterationN = 1
-            mergedRow = startRow2
-            For i = startRow2 To endRow2 'объединение ячеек расстояний
-                If Not .Cells(i, 12) = "" Then
+                If Not .Cells(i, 12) = Empty Then 'объединение ячеек средневзвешенных расстояний
                     If iterationN = 1 Then
                         iterationN = iterationN + 1
                         GoTo continueFor
@@ -487,6 +462,25 @@ Sub zoneAdd()
                 iterationN = iterationN + 1
 continueFor:
             Next i
+
+            ReDim Preserve weights2ByZone(1 To zone) 'для проверки суммы в конце (сумма массы 2 плеча, сумма сорта и несорта)
+            ReDim Preserve sortedWeights2ByZone(1 To zone)
+            ReDim Preserve unsortedWeights2ByZone(1 To zone)
+            weights2ByZone(zone) = weights2Sum
+            sortedWeights2ByZone(zone) = sortedWeights2Sum
+            unsortedWeights2ByZone(zone) = unsortedWeights2Sum
+            
+            .Cells(endRow2 + 1, 1) = "Итого"
+            .Cells(endRow2 + 1, 5) = weights2Sum
+            .Cells(endRow2 + 1, 9) = sortedWeights2Sum
+            .Cells(endRow2 + 1, 10) = unsortedWeights2Sum
+
+            Dim km2SumMul#
+            km2SumMul = 0 'средневзвешенное итоговое по 2 плечу
+            For i = LBound(weights2) To UBound(weights2)
+                km2SumMul = km2SumMul + (weights2(i) * km2(i))
+            Next i
+            .Cells(endRow2 + 1, 12) = km2SumMul / weights2Sum
 
 
             '-----------------------------------Конец 2 плечо-----------------------------------------
