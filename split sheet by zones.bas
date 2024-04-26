@@ -5,6 +5,15 @@ Private Function HEXconverter(hexValue As String) As String
     HEXconverter = "&H" & rightV & centerV & leftV
 End Function
 
+Function twoDimArrayToOneDim(oldArr)
+    Dim newArr As Variant
+    ReDim newArr(1 To UBound(oldArr, 1) * UBound(oldArr, 2))
+    For i = LBound(oldArr, 1) To UBound(oldArr, 1)
+        newArr(i) = oldArr(i, 1)
+    Next i
+    twoDimArrayToOneDim = newArr
+End Function
+
 Sub zoneAdd()
 
     With Application
@@ -309,8 +318,8 @@ Sub zoneAdd()
             Dim objectsAfterSort() As String
             e = 1
             For i = startRow To endrow
-                ReDim Preserve weightsAfterSort(1 To e) 'масса после обработки 1 плечо 'тут было e + 1
-                ReDim Preserve objectsAfterSort(1 To e) 'наименования объектов 1 плечо 'тут было e + 1
+                ReDim Preserve weightsAfterSort(1 To e) 'масса после обработки 1 плечо
+                ReDim Preserve objectsAfterSort(1 To e) 'наименования объектов 1 плечо
                 If IsNumeric(.Cells(i, 8)) = True Then weightsAfterSort(e) = .Cells(i, 8) Else weightsAfterSort(e) = 0
                 objectsAfterSort(e) = .Cells(i, 3)
                 e = e + 1
@@ -345,189 +354,104 @@ Sub zoneAdd()
             Next i
             '--------------------------------Конец 1 плеча--------------------------------------
         
-            Dim sumWeightObjectsZone(), sumWeightObjectsFull() As Double
-            For e = 0 To objects.Count - 1
-                ReDim Preserve sumWeightObjectsZone(1 To e + 1) 'суммы масс на объекты по лоту (если объекта нет, ставится 0) (16 шт)
-                For i = startRow To endrow
-                    If objects.Keys(e) = .Cells(i, 3) Then
-                        sumWeightObjectsZone(e + 1) = .Cells(i, 5)
-                    End If
-                    
-                Next i
-                If sumWeightObjectsZone(e + 1) = "" Then sumWeightObjectsZone(e + 1) = 0
-                'Debug.Print e + 1, sumWeightObjectsZone(e + 1)
-            Next e
+            Dim sumWeightObjectsZone() As Variant, sumWeightObjectsFull() As Double
+            ReDim Preserve sumWeightObjectsZone(1 To objects.Count) 'суммы масс на объекты по лоту (если объекта нет, ставится 0) (16 шт)
+            ReDim Preserve sumWeightObjectsFull(1 To objects.Count) 'суммы масс на объекты по всем лотам (16 шт)
             
             For e = 0 To objects.Count - 1
-                ReDim Preserve sumWeightObjectsFull(1 To e + 1) 'суммы масс на объекты по всем лотам (16 шт)
-                For element = LBound(objectsArrFull) To UBound(objectsArrFull)
-                    If objectsArrFull(element, 1) = objects.Keys(e) Then
-                        sumWeightObjectsFull(e + 1) = sumWeightObjectsFull(e + 1) + weightsArrFull(element, 1)
-                    End If
-                Next element
-                'Debug.Print e + 1, sumWeightObjectsFull(e + 1)
-            Next e
+                For i = startRow To endrow
+                    If objects.Keys(e) = .Cells(i, 3) Then sumWeightObjectsZone(e + 1) = .Cells(i, 5)
+                Next i
 
+                If sumWeightObjectsZone(e + 1) = Empty Then sumWeightObjectsZone(e + 1) = 0
+
+                For element = LBound(objectsArrFull) To UBound(objectsArrFull)
+                    If objectsArrFull(element, 1) = objects.Keys(e) Then sumWeightObjectsFull(e + 1) = sumWeightObjectsFull(e + 1) + weightsArrFull(element, 1)
+                Next element
+            Next e
+        
             '  -----------------------------------2 плечо-----------------------------------------
 
-            n = n + 3
-
-            startRow2 = n + 2 'начальная строка 3 блока (2 плечо) без заголовков
-
-            .Cells(n, 1) = "Второе плечо"
-            startRow2temp = n + 2
-            startRow2_0 = n + 2
+            startRow2 = endRow1 + 6 'начальная строка 3 блока (2 плечо) без заголовков
             
-            n = n + 1
-            Set findCell = Sheets(1).Range(Cells(n, 1), Cells(1000, 1)).Find("Второе плечо")
+            Set findCellSheet1 = Sheets(1).Range(Cells(n, 1), Cells(1000, 1)).Find("Второе плечо")
             For j = 1 To 12 'заголовки
-                .Cells(n, j) = Sheets(1).Cells(findCell.Row + 1, findCell.Column + j - 1)
+                .Cells(startRow2 - 2, j) = Sheets(1).Cells(findCellSheet1.Row, findCellSheet1.Column + j - 1)
+                .Cells(startRow2 - 1, j) = Sheets(1).Cells(findCellSheet1.Row + 1, findCellSheet1.Column + j - 1)
             Next j
-            n = n + 1
+            startRow = findCellSheet1.Row + 1
 
-            startRow = findCell.Row + 1
-            Set findCell = Sheets(1).Range(Cells(startRow, 1), Cells(1000, 1)).Find("Итого")
-
-            endrow = findCell.Row - 1
-            endRow2 = startRow2temp + endrow - startRow - 1
+            Set findCellSheet1 = Sheets(1).Range(Cells(startRow, 1), Cells(1000, 1)).Find("Итого")
+            endrow = findCellSheet1.Row - 1
+            endRow2 = startRow2 + (endrow - startRow - 1)
             
             For i = 1 To (endrow - startRow)
-                .Cells(n, 1) = "Второе плечо"
-                .Cells(n, 3) = Sheets(1).Cells(startRow + i, 3)
-                .Cells(n, 6) = Sheets(1).Cells(startRow + i, 6)
-                .Cells(n, 8) = Sheets(1).Cells(startRow + i, 8)
-                .Cells(n, 9) = Sheets(1).Cells(startRow + i, 9)
-                .Cells(n, 10) = Sheets(1).Cells(startRow + i, 10)
-                n = n + 1
+                .Cells(startRow2 + i - 1, 1) = "Второе плечо"
+                .Cells(startRow2 + i - 1, 3) = Sheets(1).Cells(startRow + i, 3)
+                .Cells(startRow2 + i - 1, 6) = Sheets(1).Cells(startRow + i, 6)
+                .Cells(startRow2 + i - 1, 8) = Sheets(1).Cells(startRow + i, 8)
             Next i
-            
-            ' For i = 1 To UBound(sumWeightObjectsZone)
-                ' Debug.Print sumWeightObjectsZone(i)
-                ' Debug.Print sumWeightObjectsFull(i)
-            ' Next i
-            
-            
+
+            counter = 0
             For i = startRow + 1 To endrow 'масса на объект по лоту в списке всего 2 плеча
                 For e = 0 To objects.Count - 1
-                    If Cells(i, 6) = objects.Keys(e) Then
-                        result = CDbl(Cells(i, 5).Value) * (sumWeightObjectsZone(e + 1) / sumWeightObjectsFull(e + 1))
-                        .Cells(startRow2temp, 5) = result
-                        startRow2temp = startRow2temp + 1
-                        'Debug.Print result
-                        n = n + 1
-            '     Else: Debug.Print "ты лох"
+                    If Sheets(1).Cells(i, 6) = objects.Keys(e) Then
+                        .Cells(startRow2 + counter, 5) = Sheets(1).Cells(i, 5) * (sumWeightObjectsZone(e + 1) / sumWeightObjectsFull(e + 1))
+                        .Cells(startRow2 + counter, 9) = Sheets(1).Cells(i, 9) * (sumWeightObjectsZone(e + 1) / sumWeightObjectsFull(e + 1))
+                        .Cells(startRow2 + counter, 10) = Sheets(1).Cells(i, 10) * (sumWeightObjectsZone(e + 1) / sumWeightObjectsFull(e + 1))
+                        counter = counter + 1
                     End If
                 Next e
             Next i
 
-            ' For e = 1 To UBound(sumWeightObjectsZone)
-                ' Debug.Print objects.Keys(e - 1), " // ", sumWeightObjectsZone(e), " // ", sumWeightObjectsFull(e)
-            ' Next e
-            ' Debug.Print "--------------------------"
+            For i = endRow2 To (endRow2 - (endrow - startRow)) Step -1
+                If .Cells(i, 5) = 0 Then .Rows(i).EntireRow.Delete 'удаление объектов с массой 0
+            Next i
+            endRow2 = .Cells(Rows.Count, 1).End(xlUp).Row 'конечная строка 3 блока (2 плечо) без итоговой
             
-            Dim weights2With0(), weights2With0New(), weights2Full(), sortedWeights2(), sortedWeights2New(), unsortedWeights2(), unsortedWeights2New(), objectRates2() As Double 'сорт/несорт
-            e = 1
-            For i = startRow2 To endRow2
-                ReDim Preserve weights2With0(1 To e)
-                ReDim Preserve sortedWeights2(1 To e)
-                ReDim Preserve unsortedWeights2(1 To e)
-                weights2With0(e) = .Cells(i, 5)
-                sortedWeights2(e) = .Cells(i, 9)
-                unsortedWeights2(e) = .Cells(i, 10)
-                e = e + 1
-            Next i
+            Dim landfills2(), km2(), weights2(), weights2ByZone(), sortedWeights2(), sortedWeights2ByZone(), unsortedWeights2(), unsortedWeights2ByZone()
+            ReDim Preserve landfills2(1 To (endRow2 - startRow2 + 1))
+            ReDim Preserve km2(1 To (endRow2 - startRow2 + 1))
+            ReDim Preserve weights2(1 To (endRow2 - startRow2 + 1))
+            ReDim Preserve sortedWeights2(1 To (endRow2 - startRow2 + 1))
+            ReDim Preserve unsortedWeights2(1 To (endRow2 - startRow2 + 1))
 
-            e = 1
-            For i = findCell2Start.Row + 2 To findCell2End.Row - 1
-                ReDim Preserve weights2Full(1 To e)
-                weights2Full(e) = Sheets(1).Cells(i, 5)
-                e = e + 1
-            Next i
-
+            weights2Sum = 0
             sortedWeights2Sum = 0
             unsortedWeights2Sum = 0
-            e = 1
-            For i = startRow2 To endRow2 'все еще сорт/несорт
-                .Cells(i, 9) = sortedWeights2(e) * (weights2With0(e) / weights2Full(e))
-                sortedWeights2Sum = sortedWeights2Sum + .Cells(i, 9)
-                .Cells(i, 10) = unsortedWeights2(e) * (weights2With0(e) / weights2Full(e))
-                unsortedWeights2Sum = unsortedWeights2Sum + .Cells(i, 10)
-                e = e + 1
-            Next i
-        
-            ReDim Preserve sortedWeights2New(1 To zone) 'все еще сорт/несорт для проверки суммы в конце (сумма массы 2 плеча, сумма сорта и несорта)
-            ReDim Preserve unsortedWeights2New(1 To zone)
-            sortedWeights2New(zone) = sortedWeights2Sum
-            unsortedWeights2New(zone) = unsortedWeights2Sum
-
-            weights2With0Sum = 0
-            For e = 1 To UBound(weights2With0)
-                weights2With0Sum = weights2With0Sum + weights2With0(e)
-            Next e
-            ReDim Preserve weights2With0New(1 To zone)
-            weights2With0New(zone) = weights2With0Sum
-
-        
-            For i = endRow2 To (endRow2 - (endrow - startRow)) Step -1
-                If .Cells(i, 5) = 0 Then .Rows(i).EntireRow.Delete
+            For i = startRow2 To endRow2 'полигоны, расстояния, массы 2 плеча, сорта/несорта + их сумма
+                landfills2(i - startRow2 + 1) = .Cells(i, 3)
+                km2(i - startRow2 + 1) = .Cells(i, 8)
+                weights2(i - startRow2 + 1) = .Cells(i, 5)
+                weights2Sum = weights2Sum + weights2(i - startRow2 + 1)
+                sortedWeights2(i - startRow2 + 1) = .Cells(i, 9)
+                sortedWeights2Sum = sortedWeights2Sum + sortedWeights2(i - startRow2 + 1)
+                unsortedWeights2(i - startRow2 + 1) = .Cells(i, 10)
+                unsortedWeights2Sum = unsortedWeights2Sum + unsortedWeights2(i - startRow2 + 1)
             Next i
             
-            endRow2 = .Cells(Rows.Count, 1).End(xlUp).Row
-            n = endRow2 + 1
-            
-            .Cells(n, 1) = "Итого"
-            .Cells(n, 5) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow2_0, 5), .Cells(endRow2, 5)))
-            
-            weight2Sum = .Cells(n, 5)
-            .Cells(n, 9) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow2_0, 9), .Cells(endRow2, 9)))
-            .Cells(n, 10) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow2_0, 10), .Cells(endRow2, 10)))
-
-            endRow2 = n - 1 'конечная строка 3 блока (2 плечо) без итоговой
-
-            Dim km2SumMul#
-            Dim weights2, landfills2, km2 As Variant 'массы, полигоны и расстояния 2 плеча
-            weights2 = .Range(.Cells(startRow2_0, 5), .Cells(endRow2, 5))
-            landfills2 = .Range(.Cells(startRow2_0, 3), .Cells(endRow2, 3))
-            km2 = .Range(.Cells(startRow2_0, 8), .Cells(endRow2, 8))
-
-            e0 = 1
-            element = 1
-            For i = startRow2_0 To endRow2
-                For e = 1 To UBound(weightsAfterSort)
-                    If objectsAfterSort(e) = .Cells(i, 6) Then
-                        .Cells(i, 11) = weights2(e0, 1) / CDbl(weightsAfterSort(e)) 'доля от общего потока объекта
-                    End If
+            iterationN = 1
+            mergedRow = startRow2
+            For i = startRow2 To endRow2
+                For e = LBound(weightsAfterSort) To UBound(weightsAfterSort)
+                    If .Cells(i, 6) = objectsAfterSort(e) Then .Cells(i, 11) = weights2(endRow2 - startRow2 + 1) / CDbl(weightsAfterSort(e)) 'доля от общего потока объекта
                 Next e
-                e0 = e0 + 1
 
                 sumMultiplicationResult = 0
-                If Not .Cells(i, 3) = .Cells(i + 1, 3) Then 'средневзвешенные расстояния по полигонам
-                    ' ReDim Preserve landfillsList(1 To element)
-                    ' landfillsList(element) = .Cells(i, 3) 'сразу добавляем в список полигонов без дубликатов и забываем про этот список до таблицы с полигонами (тут только полигоны 2 плеча!!!)
-                    ' element = element + 1
+                If Not .Cells(i, 3) = .Cells(i + 1, 3) Then 'средневзвешенные расстояния
                     weightLandfill = 0
-                    For e = 1 To UBound(weights2)
-                        If landfills2(e, 1) = .Cells(i, 3) Then
-                            weightLandfill = weightLandfill + weights2(e, 1)
-                            multiplicationResult = weights2(e, 1) * km2(e, 1)
+                    For e = LBound(weights2) To UBound(weights2)
+                        If landfills2(e) = .Cells(i, 3) Then
+                            weightLandfill = weightLandfill + weights2(e)
+                            multiplicationResult = weights2(e) * km2(e)
                             sumMultiplicationResult = sumMultiplicationResult + multiplicationResult
                         End If
                     Next e
                     km2Result = sumMultiplicationResult / weightLandfill
                     .Cells(i, 12) = km2Result
                 End If
-            Next i
 
-            km2SumMul = 0 'средневзвешенное итоговое по 2 плечу
-            For i = LBound(weights2) To UBound(weights2)
-                km2SumMul = km2SumMul + (weights2(i, 1) * km2(i, 1))
-            Next i
-            .Cells(endRow2 + 1, 12) = km2SumMul / Application.WorksheetFunction.Sum(.Range(.Cells(startRow2_0, 5), .Cells(endRow2, 5)))
-
-            iterationN = 1
-            mergedRow = startRow2
-            For i = startRow2 To endRow2 'объединение ячеек расстояний
-                If Not .Cells(i, 12) = "" Then
+                If Not .Cells(i, 12) = Empty Then 'объединение ячеек средневзвешенных расстояний
                     If iterationN = 1 Then
                         iterationN = iterationN + 1
                         GoTo continueFor
@@ -539,6 +463,24 @@ Sub zoneAdd()
 continueFor:
             Next i
 
+            ReDim Preserve weights2ByZone(1 To zone) 'для проверки суммы в конце (сумма массы 2 плеча, сумма сорта и несорта)
+            ReDim Preserve sortedWeights2ByZone(1 To zone)
+            ReDim Preserve unsortedWeights2ByZone(1 To zone)
+            weights2ByZone(zone) = weights2Sum
+            sortedWeights2ByZone(zone) = sortedWeights2Sum
+            unsortedWeights2ByZone(zone) = unsortedWeights2Sum
+            
+            .Cells(endRow2 + 1, 1) = "Итого"
+            .Cells(endRow2 + 1, 5) = weights2Sum
+            .Cells(endRow2 + 1, 9) = sortedWeights2Sum
+            .Cells(endRow2 + 1, 10) = unsortedWeights2Sum
+
+            Dim km2SumMul#
+            km2SumMul = 0 'средневзвешенное итоговое по 2 плечу
+            For i = LBound(weights2) To UBound(weights2)
+                km2SumMul = km2SumMul + (weights2(i) * km2(i))
+            Next i
+            .Cells(endRow2 + 1, 12) = km2SumMul / weights2Sum
 
 
             '-----------------------------------Конец 2 плечо-----------------------------------------
@@ -563,131 +505,103 @@ continueFor:
                 End If
             Next Key
 
-            
-            n = endRow2 + 4
 
             Set findCell = Sheets(1).Range(Cells(1, 1), Cells(1000, 1)).Find("Объекты размещения")
 
+            startRow3 = endRow2 + 6 'начальная строка 3 блока (Объекты размещения) без заголовков
+            endRow3 = startRow3 + UBound(landfillsList) - 1 'конечная строка 3 блока (Объекты размещения) без итогов
+            .Cells(startRow3 - 2, 1) = Sheets(1).Cells(findCell.Row, 1)
 
-            startRow3 = n + 2 'начальная строка 3 блока (Объекты размещения) без заголовков
-            .Cells(n, 1) = Sheets(1).Cells(findCell.Row, 1)
-            n = n + 1
             For j = 1 To 11
-                .Cells(n, j) = Sheets(1).Cells(findCell.Row + 1, j)
+                .Cells(startRow3 - 1, j) = Sheets(1).Cells(findCell.Row + 1, j) 'заголовки
             Next j
-            n = n + 1
 
-            counter = 0
-            For e = 1 To UBound(landfillsList) 'заполнение названий полигонов (заполняются все, даже если на них 0 т)
-            ' Debug.Print landfillsList(e)
-                .Cells(n + e - 1, 1) = landfillsList(e)
-                counter = counter + 1
+            For e = 1 To UBound(landfillsList) 'названия полигонов (заполняются все, даже если на них 0 т)
+                .Cells(startRow3 + e - 1, 1) = landfillsList(e)
             Next e
 
-            n = n + counter
-            
-            endRow3 = n - 1 'конечная строка 3 блока (Объекты размещения) без итогов
-
             Dim sumWeights0Landfills() As Double, sumWeights2Landfills() As Double 'веса полигонов по прямому вывозу и 2 плечу
-            element = 1
-            elem = 1
+            ReDim Preserve sumWeights0Landfills(1 To UBound(landfillsList))
+            ReDim Preserve sumWeights2Landfills(1 To UBound(landfillsList))
+
             For e = 1 To UBound(landfillsList)
                 sumWeightLandfill0 = 0
                 For i = startRow1 To endRow1 'цикл по блоку 1 плечо и прямой вывоз итоги
-                    If landfillsList(e) = .Cells(i, 3) Then
-                        sumWeightLandfill0 = sumWeightLandfill0 + .Cells(i, 5)
-                    End If
+                    If landfillsList(e) = .Cells(i, 3) Then sumWeightLandfill0 = sumWeightLandfill0 + .Cells(i, 5) 'суммарный вес прямого вывоза по одному полигону
                 Next i
-                ReDim Preserve sumWeights0Landfills(1 To element)
-                sumWeights0Landfills(element) = sumWeightLandfill0 'веса полигонов прямой вывоз
-                element = element + 1
-
+                sumWeights0Landfills(e) = sumWeightLandfill0 'веса полигонов прямой вывоз
+                
                 sumWeightLandfill2 = 0
                 For i = startRow2 To endRow2 'цикл по блоку 2 плечо
-                    If landfillsList(e) = .Cells(i, 3) Then sumWeightLandfill2 = sumWeightLandfill2 + .Cells(i, 5)
+                    If landfillsList(e) = .Cells(i, 3) Then sumWeightLandfill2 = sumWeightLandfill2 + .Cells(i, 5) 'суммарный вес 2 плеча по одному полигону
                 Next i
-                ReDim Preserve sumWeights2Landfills(1 To elem)
-                sumWeights2Landfills(elem) = sumWeightLandfill2 'веса полигонов 2 плечо
-                elem = elem + 1
+                sumWeights2Landfills(e) = sumWeightLandfill2 'веса полигонов 2 плечо
             Next e
 
             For e = 1 To UBound(landfillsList)
-                .Cells(n - counter + e - 1, 4) = sumWeights0Landfills(e) 'надо исправить этот ужас n - counter + e - 1
-                .Cells(n - counter + e - 1, 5) = sumWeights2Landfills(e) 'надо исправить этот ужас n - counter + e - 1
-                .Cells(n - counter + e - 1, 6) = sumWeights0Landfills(e) + sumWeights2Landfills(e) 'надо исправить этот ужас n - counter + e - 1
+                .Cells(startRow3 + e - 1, 4) = sumWeights0Landfills(e)
+                .Cells(startRow3 + e - 1, 5) = sumWeights2Landfills(e)
+                .Cells(startRow3 + e - 1, 6) = sumWeights0Landfills(e) + sumWeights2Landfills(e)
 
                 For Key = 0 To objects.Count - 1
                     If objects.Keys(Key) = landfillsList(e) Then
-                        .Cells(n - counter + e - 1, 7) = objects(objects.Keys(Key))(0) '% ВМР
-                        .Cells(n - counter + e - 1, 8) = objects(objects.Keys(Key))(1) 'лимит обработки
+                        .Cells(startRow3 + e - 1, 7) = objects(objects.Keys(Key))(0) '% ВМР
+                        .Cells(startRow3 + e - 1, 8) = objects(objects.Keys(Key))(1) 'лимит обработки
                         weightResult = (sumWeights0Landfills(e) + sumWeights2Landfills(e)) - Application.WorksheetFunction.Min((sumWeights0Landfills(e) + sumWeights2Landfills(e)), objects(objects.Keys(Key))(1)) * objects(objects.Keys(Key))(0) 'масса размещения
-                        .Cells(n - counter + e - 1, 9) = weightResult
-                        .Cells(n - counter + e - 1, 10) = objects(objects.Keys(Key))(2) 'лимит размещения
-                        .Cells(n - counter + e - 1, 11) = weightResult / objects(objects.Keys(Key))(2) 'загрузка объекта размещения
+                        .Cells(startRow3 + e - 1, 9) = weightResult
+                        .Cells(startRow3 + e - 1, 10) = objects(objects.Keys(Key))(2) 'лимит размещения
+                        .Cells(startRow3 + e - 1, 11) = weightResult / objects(objects.Keys(Key))(2) 'загрузка объекта размещения
                     End If
                 Next Key
             Next e
 
+            Set findCellSheet1 = Sheets(1).Range(Cells(1, 1), Cells(1000, 1)).Find("Объект размещения")
+
             Dim landfillsWeightFull() As Double, landfillsWeightZone() As Double, coeffLandfills() As Double
+            ReDim Preserve landfillsWeightZone(1 To UBound(landfillsList))
+            ReDim Preserve landfillsWeightFull(1 To UBound(landfillsList))
+            ReDim Preserve coeffLandfills(1 To UBound(landfillsList))
 
-            Set findCell = Sheets(1).Range(Cells(1, 1), Cells(1000, 1)).Find("Объект размещения")
-
-            For e = 1 To UBound(landfillsList) 'коэф. лота в полигоне.
+            For e = 1 To UBound(landfillsList) 'коэф. лота в полигоне
                 For i = startRow3 To endRow3
                     If landfillsList(e) = .Cells(i, 1) Then
-                        ReDim Preserve landfillsWeightZone(1 To e)
                         landfillsWeightZone(e) = CDbl(.Cells(i, 6)) 'общий вес полигона по текущему лоту (поступление)
                         Exit For
                     End If
                 Next i
-                For i = findCell.Row + 1 To findCell.Row + 1 + UBound(landfillsList)
+                For i = findCellSheet1.Row + 1 To findCellSheet1.Row + 1 + UBound(landfillsList)
                     If landfillsList(e) = Sheets(1).Cells(i, 1) Then
-                        ReDim Preserve landfillsWeightFull(1 To e)
                         landfillsWeightFull(e) = CDbl(Sheets(1).Cells(i, 6)) 'общий вес полигона по всем лотам (поступление)
                         Exit For
                     End If
                 Next i
-                ReDim Preserve coeffLandfills(1 To e)
-                coeffLandfills(e) = landfillsWeightZone(e) / landfillsWeightFull(e) 'коэф. лота в полигоне. Возможно правильнее добавить в словарь, но зачем эти лишние движения?
+                coeffLandfills(e) = landfillsWeightZone(e) / landfillsWeightFull(e) 'коэф. лота в полигоне. Возможно правильнее добавить в словарь
                 ' Debug.Print coeffLandfills(e)
             Next e
 
-
-            'еще раз заполнение лимита обаботки с учетом коэффициента лота в полигоне
-            For e = 1 To UBound(landfillsWeightZone)
+            For e = 1 To UBound(landfillsWeightZone) 'еще раз заполнение лимита обаботки с учетом коэффициента лота в полигоне
                 .Cells(startRow3 + e - 1, 8) = .Cells(startRow3 + e - 1, 8) * coeffLandfills(e)
             Next e
 
-
-            .Cells(n, 1) = "Итого" 'заполнение строки с итогами
-            .Cells(n, 4) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow3, 4), .Cells(endRow3, 4)))
-            .Cells(n, 5) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow3, 5), .Cells(endRow3, 5)))
-            .Cells(n, 6) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow3, 6), .Cells(endRow3, 6)))
-            .Cells(n, 8) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow3, 8), .Cells(endRow3, 8)))
-            .Cells(n, 9) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow3, 9), .Cells(endRow3, 9)))
-            .Cells(n, 10) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow3, 10), .Cells(endRow3, 10)))
-            .Cells(n, 11) = .Cells(n, 9) / .Cells(n, 10) 'n это строка с итогами
+            .Cells(endRow3 + 1, 1) = "Итого" 'строка с итогами
+            .Cells(endRow3 + 1, 4) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow3, 4), .Cells(endRow3, 4)))
+            .Cells(endRow3 + 1, 5) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow3, 5), .Cells(endRow3, 5)))
+            .Cells(endRow3 + 1, 6) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow3, 6), .Cells(endRow3, 6)))
+            .Cells(endRow3 + 1, 8) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow3, 8), .Cells(endRow3, 8)))
+            .Cells(endRow3 + 1, 9) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow3, 9), .Cells(endRow3, 9)))
+            .Cells(endRow3 + 1, 10) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow3, 10), .Cells(endRow3, 10)))
+            .Cells(endRow3 + 1, 11) = .Cells(endRow3 + 1, 9) / .Cells(endRow3 + 1, 10)
 
             ReDim Preserve checkingLandfillsWeight(1 To zone)
-            checkingLandfillsWeight(zone) = .Cells(n, 6)
+            checkingLandfillsWeight(zone) = .Cells(endRow3 + 1, 6)
 
-            counter = 0
             For i = endRow3 To startRow3 Step -1 'удаляем ненужные полигоны
                 If .Cells(i, 6) = 0 Then
                     .Rows(i).EntireRow.Delete
-                    counter = counter + 1
+                    endRow3 = endRow3 - 1
                 End If
             Next i
-            endRow3 = endRow3 - counter
             '-----------------------------------Конец полигоны-----------------------------------------
-
-            'Debug.Print "_______________", UBound(landfillsList)
-
-            ' Debug.Print "---------------------"
-            ' For e = 1 To UBound(landfillsList)
-            '     Debug.Print landfillsList(e)
-            ' Next e
-            ' Debug.Print "---------------------"
 
             ' For e = 0 To objects.Count - 1
             '     Debug.Print objects(objects.Keys(e))(5)
@@ -695,11 +609,6 @@ continueFor:
 
             Erase sumWeightObjectsZone 'очищаем т.к. redim оставляет первое значение этих массивов и прибавляет к ним новые значения
             Erase sumWeightObjectsFull 'очищаем т.к. redim оставляет первое значение этих массивов и прибавляет к ним новые значения
-            'Erase sortedWeights2
-            'Erase sortedWeights2New
-            'Erase unsortedWeights2
-            'Erase unsortedWeights2New
-            'Erase weights2With0New
 
 
             '-----------------------------------Форматирование-----------------------------------------
@@ -844,10 +753,10 @@ continueFor:
         resultCheckingSumWeight = resultCheckingSumWeight + checkingSumWeight(zone)
         resultCheckingObjectsWeight = resultCheckingObjectsWeight + checkingObjectsWeight(zone)
         resultCheckingLandfillsWeight = resultCheckingLandfillsWeight + checkingLandfillsWeight(zone)
-        If Not WorksheetFunction.Round(weights2With0New(zone), 4) = WorksheetFunction.Round((sortedWeights2New(zone) + unsortedWeights2New(zone)), 4) Then
+        If Not WorksheetFunction.Round(weights2ByZone(zone), 4) = WorksheetFunction.Round((sortedWeights2ByZone(zone) + unsortedWeights2ByZone(zone)), 4) Then
             checkBad = True
-            errText = errText & "Лот " & zone & ": " & vbLf & "Масса 2 плеча: " & WorksheetFunction.Round(weights2With0New(zone), 4) _
-            & vbLf & "Масса 2 плеча как сорт + несорт: " & WorksheetFunction.Round((sortedWeights2New(zone) + unsortedWeights2New(zone)), 4) & vbLf & vbLf
+            errText = errText & "Лот " & zone & ": " & vbLf & "Масса 2 плеча: " & WorksheetFunction.Round(weights2ByZone(zone), 4) _
+            & vbLf & "Масса 2 плеча как сорт + несорт: " & WorksheetFunction.Round((sortedWeights2ByZone(zone) + unsortedWeights2ByZone(zone)), 4) & vbLf & vbLf
         End If
     Next zone
 
