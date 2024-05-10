@@ -183,7 +183,8 @@ Sub zoneAdd()
             sumWeight0 = 0
             sumWeight1 = 0
             counter0 = 0
-            For i = 1 To UBound(sortPlaces)
+            is0 = False
+            For i = LBound(sortPlaces) To UBound(sortPlaces)
                 sumWeightObject = 0
                 resultKm = 0
                 For e = LBound(objectsArr, 1) To UBound(objectsArr, 1) 'вес по объекту и суммпроизв расстояния
@@ -198,7 +199,6 @@ Sub zoneAdd()
                 .Cells(endrow1, 10) = km 'сревзв расстояние
                 
                 If objects(sortPlaces(i))(4) = "Первое плечо" Then
-                    is0 = False
                     .Cells(endrow1, 6) = objects(sortPlaces(i))(0) 'отбор ВМР
                     sortLimit = sumWeightObject * objects(sortPlaces(i))(5) 'производственная программа
                     .Cells(endrow1, 7) = sortLimit
@@ -213,19 +213,15 @@ Sub zoneAdd()
                     .Cells(endrow1, 8) = "—"
                     .Cells(endrow1, 9) = "—"
                     .Cells(endrow1, 13) = 0 'перегруз
-                    sumWeight1 = sumWeight1 + sumWeightObject 'общая масса прямой вывоз
+                    sumWeight0 = sumWeight0 + sumWeightObject 'общая масса прямой вывоз
                     counter0 = counter0 + 1
                 End If
                 endrow1 = endrow1 + 1
             Next i
             endrow1 = endrow1 - 1
             
-            If Not is0 Then
-                .Cells(endrow1, 12) = sumWeight1 'масса 1 плечо
-            ElseIf is0 Then
-                .Cells(endrow1, 12) = sumWeight1 'масса 1 плечо
-                .Cells(endrow1 - counter0, 12) = sumWeight0 'масса прямого вывоза
-            End If
+            .Cells(endrow1, 12) = sumWeight1 'масса 1 плечо
+            If is0 Then .Cells(startRow1 + counter0 - 1, 12) = sumWeight0 'масса прямого вывоза
 
             ReDim Preserve checkingObjectsWeight(1 To zone)
             checkingObjectsWeight(zone) = sumWeight1 + sumWeight0 'масса 1 плеча и прямого вывоза
@@ -249,61 +245,55 @@ Sub zoneAdd()
             kmArr01 = twoDimArrayToOneDim(kmArr01)
             
             km1 = 0
-            For e = lBound(typeArr01) To UBound(typeArr01)
+            For e = LBound(typeArr01) To UBound(typeArr01)
                 If typeArr01(e) = "Первое плечо" Then
                     kmWeight = weightsArr01(e) * kmArr01(e)
                     km1 = km1 + kmWeight
                 End If
             Next e
             km1 = km1 / sumWeight1
-            .Cells(endRow1 - 1, 11) = km1 'средневзвешенное 1 плечо
+            .Cells(endrow1, 11) = km1 'средневзвешенное 1 плечо
 
             If is0 Then
                 km0 = 0
-                For e = 1 To UBound(typeArr01)
+                For e = LBound(typeArr01) To UBound(typeArr01)
                     If typeArr01(e) = "Прямой вывоз" Then
                         kmWeight = weightsArr01(e) * kmArr01(e)
                         km0 = km0 + kmWeight
                     End If
                 Next e
                 km0 = km0 / sumWeight0
-                .Cells(endRow1 - counter0, 11) = km0 'средневзвешенное прямой вывоз
+                .Cells(startRow1 + counter0 - 1, 11) = km0 'средневзвешенное прямой вывоз
             End If
 
-            .Cells(endRow1 + 1, 1) = "Итого"
-            .Cells(endRow1 + 1, 5) = sumWeightZone
-            .Cells(endRow1 + 1, 7) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow1, 7), .Cells(endRow1, 7)))
-            .Cells(endRow1 + 1, 8) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow1, 8), .Cells(endRow1, 8)))
-            .Cells(endRow1 + 1, 9) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow1, 9), .Cells(endRow1, 9)))
-            .Cells(endRow1 + 1, 13) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow1, 13), .Cells(endRow1, 13)))
+            .Cells(endrow1 + 1, 1) = "Итого"
+            .Cells(endrow1 + 1, 5) = sumWeightZone
+            .Cells(endrow1 + 1, 7) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow1, 7), .Cells(endrow1, 7)))
+            .Cells(endrow1 + 1, 8) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow1, 8), .Cells(endrow1, 8)))
+            .Cells(endrow1 + 1, 9) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow1, 9), .Cells(endrow1, 9)))
+            .Cells(endrow1 + 1, 13) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow1, 13), .Cells(endrow1, 13)))
 
 
             Dim weightsAfterSort() As Double
             Dim objectsAfterSort() As String
-            e = 1
-            For i = startRow1 To endRow1
-                ReDim Preserve weightsAfterSort(1 To e) 'масса после обработки 1 плечо
-                ReDim Preserve objectsAfterSort(1 To e) 'наименования объектов 1 плечо
-                If IsNumeric(.Cells(i, 8)) = True Then weightsAfterSort(e) = .Cells(i, 8) Else weightsAfterSort(e) = 0
-                objectsAfterSort(e) = .Cells(i, 3)
-                e = e + 1
+            For i = startRow1 To endrow1
+                ReDim Preserve weightsAfterSort(1 To i - startRow1 + 1) 'масс   а после обработки 1 плечо
+                ReDim Preserve objectsAfterSort(1 To i - startRow1 + 1) 'наименования объектов 1 плечо
+                If IsNumeric(.Cells(i, 8)) = True Then weightsAfterSort(i - startRow1 + 1) = .Cells(i, 8) Else weightsAfterSort(i - startRow1 + 1) = 0
+                objectsAfterSort(i - startRow1 + 1) = .Cells(i, 3)
             Next i
 
             km = 0
-            e = 1
-            For i = startRow1 To endRow1 'средневзвешенное итог
-                kmWeight = weightsArr01(e) * kmArr01(e)
+            For i = startRow1 To endrow1 'средневзвешенное итог
+                kmWeight = weightsArr01(i - startRow1 + 1) * kmArr01(i - startRow1 + 1)
                 km = km + kmWeight
-                e = e + 1
             Next i
             km = km / sumWeightZone
-            .Cells(endRow1 + 1, 10) = km
+            .Cells(endrow1 + 1, 10) = km
 
-            .Range(.Cells(startRow1, 1), .Cells(endRow1, 13)).Sort Key1:=.Range(.Cells(startRow1, 1), .Cells(endRow1, 1)), Order1:=xlAscending, Header:=xlNo 'сортировка чтобы сначала 1 плечо, потом прямой вывоз
+            .Range(.Cells(startRow1, 1), .Cells(endrow1, 13)).Sort Key1:=.Range(.Cells(startRow1, 1), .Cells(endrow1, 1)), Order1:=xlAscending, Header:=xlNo 'сортировка чтобы сначала 1 плечо, потом прямой вывоз
 
-            'объединение исправить 
-
-            For i = startRow1 To endRow1 'объединение ячеек расстояний и масс
+            For i = startRow1 To endrow1 'объединение ячеек расстояний и масс
                 If Not .Cells(i, 11) = "" Then
                     .Range(.Cells(startRow1, 11), .Cells(i, 11)).MergeCells = 1
                     .Range(.Cells(startRow1, 12), .Cells(i, 12)).MergeCells = 1
@@ -325,7 +315,7 @@ Sub zoneAdd()
             ReDim Preserve sumWeightObjectsFull(1 To objects.Count) 'суммы масс на объекты по всем лотам (16 шт)
             
             For e = 0 To objects.Count - 1
-                For i = startRow1 To endRow1
+                For i = startRow1 To endrow1
                     If objects.Keys(e) = .Cells(i, 3) Then sumWeightObjectsZone(e + 1) = .Cells(i, 5)
                 Next i
 
@@ -338,7 +328,7 @@ Sub zoneAdd()
         
             '  -----------------------------------2 плечо-----------------------------------------
 
-            startRow2 = endRow1 + 6 'начальная строка 3 блока (2 плечо) без заголовков
+            startRow2 = endrow1 + 6 'начальная строка 3 блока (2 плечо) без заголовков
             
             For j = 1 To 12 'заголовки
                 .Cells(startRow2 - 2, j) = Sheets(1).Cells(findCell2Start.Row, findCell2Start.Column + j - 1)
