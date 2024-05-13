@@ -25,8 +25,9 @@ Sub zoneAdd()
     Dim result#, sumWeightObject#, sumWeightZone#, sumWeight0#, sumWeight1#, km#, km0#, km1#, kmWeight As Double
     Dim weightsArr0() As Double, weightsArr1() As Double, weightsArrObjects() As Double
     Dim kmArr0() As Double, kmArr1() As Double
-    ' Dim typeArr01() As String
     Dim checkingSumWeight() As Double, checkingObjectsWeight() As Double, checkingLandfillsWeight() As Double 'массивы для проверки сумм масс (масса образования, масса 1 плеча, масса по полигонам. Масса 2 плеча и прямого вывоза не проверяется, т.к. если не сойдется масса по полигонам, то уже где-то ошибка)
+
+    splitBlocksRows = 6
 
     ThisWorkbook.Sheets(1).Select
     Set mainWs = Sheets(1)
@@ -104,13 +105,12 @@ Sub zoneAdd()
         Sheets(1).Select
         
         With Sheets("Лот " & zone)
-            For i = 1 To findcell0Start.Row + 1 'шапка блок МО
+            For i = 1 To findcell0Start.Row + 1 ''заголовки блок МО
                 For j = 1 To 11
                     .Cells(i, j) = Sheets(1).Cells(i, j)
                 Next j
             Next i
 
-            n = 0
             startRow0 = findcell0Start.Row + 2 'начальная строка 1 блока без заголовков
             endRow0 = startRow0
             For i = 1 To findcell0End.Row 'первый блок с МО
@@ -157,26 +157,24 @@ Sub zoneAdd()
             .Cells(endRow0 + 1, 10) = kmResult 'средневзвешенное расстояние
             .Cells(endRow0 + 1, 11) = Application.WorksheetFunction.Sum(.Range(.Cells(startRow0, 11), .Cells(endRow0, 11))) 'сумма РСО
             
-        
-            ' lastRowNewSh = Cells(Rows.Count, 1).End(xlUp).Row
 
-            Dim sortPlaces() As String
-            countObj = 1
-
-            For i = startRow0 To endRow0 'Наименования объектов прямого вывоза и 1 плеча n = 111
-                If Not .Cells(i, 4) = .Cells(i + 1, 4) Then
+            Dim sortPlaces() As String 'Наименования объектов прямого вывоза и 1 плеча
+            ReDim sortPlaces(1 To 1)
+            sortPlaces(1) = objectsArr(1, 1)
+            countObj = 2
+            For i = LBound(objectsArr, 1) + 1 To UBound(objectsArr, 1)
+                If Not objectsArr(i - 1, 1) = objectsArr(i, 1) Then
                     ReDim Preserve sortPlaces(1 To countObj)
-                    sortPlaces(countObj) = .Cells(i, 4).Value
+                    sortPlaces(countObj) = objectsArr(i, 1)
                     countObj = countObj + 1
                 End If
             Next i
             
-            startRow1 = endRow0 + 6 'начальная строка 2 блока (1 плечо и прямой вывоз итоги) без заголовков
+            startRow1 = endRow0 + splitBlocksRows 'начальная строка 2 блока (1 плечо и прямой вывоз итоги) без заголовков
             endrow1 = startRow1
-            .Cells(startRow1 - 2, 1) = Sheets(1).Cells(findCell1Start.Row, 1)
 
-            For j = 1 To 13 'шапка 1 плечо итоги
-                .Cells(startRow1 - 1, j) = Sheets(1).Cells(findCell1Start.Row + 1, findCell1Start.Column + j - 1)
+            For j = 1 To 13 'заголовки 1 плечо
+                .Cells(startRow1 - 2, j) = Sheets(1).Cells(findCell1Start.Row, findCell1Start.Column + j - 1)
                 .Cells(startRow1 - 1, j) = Sheets(1).Cells(findCell1Start.Row + 1, findCell1Start.Column + j - 1)
             Next j
 
@@ -188,8 +186,10 @@ Sub zoneAdd()
                 sumWeightObject = 0
                 resultKm = 0
                 For e = LBound(objectsArr, 1) To UBound(objectsArr, 1) 'вес по объекту и суммпроизв расстояния
-                    If objectsArr(e, 1) = sortPlaces(i) Then sumWeightObject = sumWeightObject + weightsArr(e, 1)
-                    If objectsArr(e, 1) = sortPlaces(i) Then resultKm = resultKm + (CDbl(weightsArr(e, 1)) * CDbl(kmArr(e, 1)))
+                    If objectsArr(e, 1) = sortPlaces(i) Then
+                        sumWeightObject = sumWeightObject + weightsArr(e, 1)
+                        resultKm = resultKm + (CDbl(weightsArr(e, 1)) * CDbl(kmArr(e, 1)))
+                    End If
                 Next e
                 km = resultKm / sumWeightObject
 
@@ -225,17 +225,6 @@ Sub zoneAdd()
 
             ReDim Preserve checkingObjectsWeight(1 To zone)
             checkingObjectsWeight(zone) = sumWeight1 + sumWeight0 'масса 1 плеча и прямого вывоза
-                    
-            ' ReDim weightsArr01(1 To endRow1 - startRow1 + 1)
-            ' ReDim kmArr01(1 To endRow1 - startRow1 + 1)
-            ' ReDim typeArr01(1 To endRow1 - startRow1 + 1)
-            ' e = 1
-            ' For i = startRow1 To endRow1
-            '     typeArr01(e) = .Cells(i, 1).Value
-            '     weightsArr01(e) = .Cells(i, 5)
-            '     kmArr01(e) = .Cells(i, 10)
-            '     e = e + 1
-            ' Next i
 
             typeArr01 = .Range(.Cells(startRow1, 1), .Cells(endrow1, 1))
             typeArr01 = twoDimArrayToOneDim(typeArr01)
@@ -277,7 +266,7 @@ Sub zoneAdd()
             Dim weightsAfterSort() As Double
             Dim objectsAfterSort() As String
             For i = startRow1 To endrow1
-                ReDim Preserve weightsAfterSort(1 To i - startRow1 + 1) 'масс   а после обработки 1 плечо
+                ReDim Preserve weightsAfterSort(1 To i - startRow1 + 1) 'масса после обработки 1 плечо
                 ReDim Preserve objectsAfterSort(1 To i - startRow1 + 1) 'наименования объектов 1 плечо
                 If IsNumeric(.Cells(i, 8)) = True Then weightsAfterSort(i - startRow1 + 1) = .Cells(i, 8) Else weightsAfterSort(i - startRow1 + 1) = 0
                 objectsAfterSort(i - startRow1 + 1) = .Cells(i, 3)
@@ -294,12 +283,12 @@ Sub zoneAdd()
             .Range(.Cells(startRow1, 1), .Cells(endrow1, 13)).Sort Key1:=.Range(.Cells(startRow1, 1), .Cells(endrow1, 1)), Order1:=xlAscending, Header:=xlNo 'сортировка чтобы сначала 1 плечо, потом прямой вывоз
 
             For i = startRow1 To endrow1 'объединение ячеек расстояний и масс
-                If Not .Cells(i, 11) = "" Then
+                If Not .Cells(i, 11) = Empty Then
                     .Range(.Cells(startRow1, 11), .Cells(i, 11)).MergeCells = 1
                     .Range(.Cells(startRow1, 12), .Cells(i, 12)).MergeCells = 1
                     mergedRow = i
                     For ii = mergedRow + 1 To endrow1
-                        If .Cells(ii, 11) = "" Then
+                        If .Cells(ii, 11) = Empty Then
                             .Range(.Cells(ii, 11), .Cells(endrow1, 11)).MergeCells = 1
                             .Range(.Cells(ii, 12), .Cells(endrow1, 12)).MergeCells = 1
                             Exit For
@@ -328,7 +317,7 @@ Sub zoneAdd()
         
             '  -----------------------------------2 плечо-----------------------------------------
 
-            startRow2 = endrow1 + 6 'начальная строка 3 блока (2 плечо) без заголовков
+            startRow2 = endrow1 + splitBlocksRows 'начальная строка 3 блока (2 плечо) без заголовков
             
             For j = 1 To 12 'заголовки
                 .Cells(startRow2 - 2, j) = Sheets(1).Cells(findCell2Start.Row, findCell2Start.Column + j - 1)
@@ -365,11 +354,11 @@ Sub zoneAdd()
             endRow2 = .Cells(Rows.Count, 1).End(xlUp).Row 'конечная строка 3 блока (2 плечо) без итоговой
             
             Dim landfills2(), km2(), weights2(), weights2ByZone(), sortedWeights2(), sortedWeights2ByZone(), unsortedWeights2(), unsortedWeights2ByZone()
-            ReDim Preserve landfills2(1 To (endRow2 - startRow2 + 1))
-            ReDim Preserve km2(1 To (endRow2 - startRow2 + 1))
-            ReDim Preserve weights2(1 To (endRow2 - startRow2 + 1))
-            ReDim Preserve sortedWeights2(1 To (endRow2 - startRow2 + 1))
-            ReDim Preserve unsortedWeights2(1 To (endRow2 - startRow2 + 1))
+            ReDim landfills2(1 To (endRow2 - startRow2 + 1))
+            ReDim km2(1 To (endRow2 - startRow2 + 1))
+            ReDim weights2(1 To (endRow2 - startRow2 + 1))
+            ReDim sortedWeights2(1 To (endRow2 - startRow2 + 1))
+            ReDim unsortedWeights2(1 To (endRow2 - startRow2 + 1))
 
             weights2Sum = 0
             sortedWeights2Sum = 0
@@ -463,7 +452,7 @@ continueFor:
 
             Set findCell = Sheets(1).Range(Cells(1, 1), Cells(1000, 1)).Find("Объекты размещения")
 
-            startRow3 = endRow2 + 6 'начальная строка 3 блока (Объекты размещения) без заголовков
+            startRow3 = endRow2 + splitBlocksRows 'начальная строка 3 блока (Объекты размещения) без заголовков
             endRow3 = startRow3 + UBound(landfillsList) - 1 'конечная строка 3 блока (Объекты размещения) без итогов
             .Cells(startRow3 - 2, 1) = Sheets(1).Cells(findCell.Row, 1)
 
@@ -743,4 +732,6 @@ continueFor:
     End With
 
 End Sub
+
+
 
